@@ -1,9 +1,12 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Player
   ( handshake
   , Player
   ) where
 
 import Data.Text (Text)
+import qualified Data.Text as T
 import Messages
 import qualified Network.WebSockets as WS
 
@@ -22,6 +25,7 @@ handshake conn = do
   maybeMessage <- parsePlayerMessage <$> WS.receiveData conn
   case maybeMessage of
     Just (ConnectionRequest username) -> do
+      print $ username `T.append` " connected."
       send conn (Connected username)
       handlePlayer conn $ Player username
     _ -> handshake conn
