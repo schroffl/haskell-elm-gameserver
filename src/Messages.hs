@@ -26,6 +26,7 @@ parsePlayerMessage str = do
   case messageType of
     "connection_request" -> parse1 result ConnectionRequest
     "keychange" -> parse2 result KeyChange
+    _ -> Nothing
 
 parse1 :: FromJSON a => Object -> (a -> b) -> Maybe b
 parse1 val with = with <$> (flip parseMaybe val $ flip (.:) "0")
