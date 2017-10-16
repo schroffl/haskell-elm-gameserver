@@ -2,13 +2,11 @@
 
 module Main where
 
-import Control.Monad (forever)
+import Control.Concurrent (MVar, newMVar)
 import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Network.WebSockets as WS
+import qualified Player as Player
 import System.Environment (getArgs)
-
-type Client = (Text, WS.Connection)
 
 main :: IO ()
 main = do
@@ -24,10 +22,4 @@ parsePort args =
 app :: WS.ServerApp
 app pending = do
   conn <- WS.acceptRequest pending
-  handleClient conn
-
-handleClient :: WS.Connection -> IO ()
-handleClient conn =
-  forever $ do
-    msg <- WS.receiveData conn
-    WS.sendTextData conn $ msg `T.append` ", you said"
+  Player.handshake conn
