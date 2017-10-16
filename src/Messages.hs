@@ -2,13 +2,16 @@
 
 module Messages
   ( parsePlayerMessage
+  , encodeServerMessage
   , PlayerMessage(..)
+  , ServerMessage(..)
   ) where
 
 import Data.Aeson
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString.Lazy (ByteString)
 import Data.Text (Text)
+import GHC.Exts (fromList)
 
 data PlayerMessage
   = ConnectionRequest Text
@@ -25,11 +28,24 @@ parsePlayerMessage str = do
     "keychange" -> parse2 result KeyChange
 
 parse1 :: FromJSON a => Object -> (a -> b) -> Maybe b
-parse1 val with = with <$> (flip parseMaybe val $ flip (.:) "arg1")
+parse1 val with = with <$> (flip parseMaybe val $ flip (.:) "0")
 
 parse2 :: (FromJSON a, FromJSON b) => Object -> (a -> b -> c) -> Maybe c
 parse2 val with =
   flip parseMaybe val $ \obj -> do
-    arg1 <- obj .: "arg1"
-    arg2 <- obj .: "arg2"
+    arg1 <- obj .: "0"
+    arg2 <- obj .: "1"
     return $ with arg1 arg2
+
+data ServerMessage =
+  Connected Text
+  deriving (Show)
+
+encodeServerMessage :: ServerMessage -> ByteString
+encodeServerMessage msg =
+  encode $
+  case msg of
+    Connected username -> helper "connected" [("0", String username)]
+  where
+    helper messageType values =
+      Object . fromList $ ("type", String messageType) : values
