@@ -1,14 +1,18 @@
 module Player
   ( handshake
+  , Player
   ) where
 
 import Data.Text (Text)
-import Messages (PlayerMessage(..), parsePlayerMessage)
-import Network.WebSockets as WS
+import Messages
+import qualified Network.WebSockets as WS
 
 data Player = Player
   { plUsername :: Text
   } deriving (Show)
+
+send :: WS.Connection -> ServerMessage -> IO ()
+send conn = WS.sendTextData conn . encodeServerMessage
 
 update :: PlayerMessage -> Player -> Player
 update msg player = player
@@ -17,9 +21,9 @@ handshake :: WS.Connection -> IO ()
 handshake conn = do
   maybeMessage <- parsePlayerMessage <$> WS.receiveData conn
   case maybeMessage of
-    Just (ConnectionRequest username) ->
-      let player = Player username
-      in handlePlayer conn player
+    Just (ConnectionRequest username) -> do
+      send conn (Connected username)
+      handlePlayer conn $ Player username
     _ -> handshake conn
 
 handlePlayer :: WS.Connection -> Player -> IO ()
