@@ -10,12 +10,9 @@ import qualified Data.Text as T
 import Messages
 import qualified Network.WebSockets as WS
 
-type Orientation = (Float, Float)
-
 data Player = Player
   { plUsername :: Text
   , plKeys :: Keys
-  , plOrientation :: Orientation
   } deriving (Show)
 
 data Keys = Keys
@@ -27,11 +24,7 @@ data Keys = Keys
 
 initPlayer :: Text -> Player
 initPlayer username =
-  Player
-  { plUsername = username
-  , plKeys = Keys False False False False
-  , plOrientation = (0, 0)
-  }
+  Player {plUsername = username, plKeys = Keys False False False False}
 
 send :: WS.Connection -> ServerMessage -> IO ()
 send conn = WS.sendTextData conn . encodeServerMessage
