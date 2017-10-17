@@ -2,7 +2,7 @@
 
 module Player
   ( handshake
-  , Player
+  , Player(plUsername)
   ) where
 
 import Data.Text (Text)
@@ -29,15 +29,16 @@ initPlayer username =
 send :: WS.Connection -> ServerMessage -> IO ()
 send conn = WS.sendTextData conn . encodeServerMessage
 
-handshake :: WS.Connection -> IO ()
-handshake conn = do
+handshake :: WS.Connection -> (Player -> IO ()) -> IO ()
+handshake conn addPlayer = do
   maybeMessage <- parsePlayerMessage <$> WS.receiveData conn
   case maybeMessage of
     Just (ConnectionRequest username) -> do
-      print $ username `T.append` " connected."
       send conn (Connected username)
-      handlePlayer conn $ initPlayer username
-    _ -> handshake conn
+      addPlayer player
+      handlePlayer conn player
+      where player = initPlayer username
+    _ -> handshake conn addPlayer
 
 handlePlayer :: WS.Connection -> Player -> IO ()
 handlePlayer conn player = do
