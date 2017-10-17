@@ -17,6 +17,8 @@ data PlayerMessage
   = ConnectionRequest Text
   | KeyChange Int
               Bool
+  | MouseMove Float
+              Float
   deriving (Show)
 
 parsePlayerMessage :: ByteString -> Maybe PlayerMessage
@@ -26,6 +28,7 @@ parsePlayerMessage str = do
   case messageType of
     "connection_request" -> parse1 result ConnectionRequest
     "keychange" -> parse2 result KeyChange
+    "mousemove" -> parse2 result MouseMove
     _ -> Nothing
 
 parse1 :: FromJSON a => Object -> (a -> b) -> Maybe b
