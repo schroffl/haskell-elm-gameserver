@@ -49,7 +49,7 @@ encodeServerMessage :: ServerMessage -> ByteString
 encodeServerMessage msg =
   encode $
   case msg of
-    Connected username -> helper "connected" [("0", String username)]
+    Connected username -> helper "connected" [("0", toJSON username)]
   where
     helper messageType values =
       Object . fromList $ ("type", String messageType) : values
