@@ -51,9 +51,8 @@ handlePlayer conn player = do
 update :: PlayerMessage -> Player -> Player
 update msg player =
   case msg of
-    KeyChange keyCode newState ->
-      let newKeys = updateKeys keyCode newState $ plKeys player
-      in player
+    KeyChange keyCode newState -> player {plKeys = newKeys}
+      where newKeys = updateKeys keyCode newState $ plKeys player
     _ -> player
 
 updateKeys :: Int -> Bool -> Keys -> Keys
