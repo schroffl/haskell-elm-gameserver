@@ -10,15 +10,31 @@ import qualified Data.Text as T
 import Messages
 import qualified Network.WebSockets as WS
 
+type Orientation = (Float, Float)
+
 data Player = Player
   { plUsername :: Text
+  , plKeys :: Keys
+  , plOrientation :: Orientation
   } deriving (Show)
+
+data Keys = Keys
+  { keyForward :: Bool
+  , keyBack :: Bool
+  , keyLeft :: Bool
+  , keyRight :: Bool
+  } deriving (Show)
+
+initPlayer :: Text -> Player
+initPlayer username =
+  Player
+  { plUsername = username
+  , plKeys = Keys False False False False
+  , plOrientation = (0, 0)
+  }
 
 send :: WS.Connection -> ServerMessage -> IO ()
 send conn = WS.sendTextData conn . encodeServerMessage
-
-update :: PlayerMessage -> Player -> Player
-update msg player = player
 
 handshake :: WS.Connection -> IO ()
 handshake conn = do
@@ -27,12 +43,30 @@ handshake conn = do
     Just (ConnectionRequest username) -> do
       print $ username `T.append` " connected."
       send conn (Connected username)
-      handlePlayer conn $ Player username
+      handlePlayer conn $ initPlayer username
     _ -> handshake conn
 
 handlePlayer :: WS.Connection -> Player -> IO ()
 handlePlayer conn player = do
   maybeMessage <- parsePlayerMessage <$> WS.receiveData conn
+  print maybeMessage
   case maybeMessage of
     Nothing -> handlePlayer conn player
     Just msg -> handlePlayer conn $ update msg player
+
+update :: PlayerMessage -> Player -> Player
+update msg player =
+  case msg of
+    KeyChange keyCode newState ->
+      let newKeys = updateKeys keyCode newState $ plKeys player
+      in player
+    _ -> player
+
+updateKeys :: Int -> Bool -> Keys -> Keys
+updateKeys keyCode newState keys =
+  case keyCode of
+    87 -> keys {keyForward = newState}
+    83 -> keys {keyBack = newState}
+    65 -> keys {keyLeft = newState}
+    68 -> keys {keyRight = newState}
+    _ -> keys
