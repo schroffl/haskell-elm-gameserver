@@ -15,8 +15,10 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Player
-                     , Messages
+  exposed-modules:     Messages
+                     , Player
+                     , GameLoop
+                     , Subscribers
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , bytestring
