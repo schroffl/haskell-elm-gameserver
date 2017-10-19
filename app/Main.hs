@@ -2,33 +2,25 @@
 
 module Main where
 
-import Control.Concurrent (MVar, modifyMVar_, newMVar)
-import Data.Text (Text)
-import qualified Data.Text as T
+import Control.Concurrent (MVar, forkIO)
+import Messages
 import qualified Network.WebSockets as WS
-import qualified Player as Player
-import System.Environment (getArgs)
-
-type PlayerList = [(WS.Connection, Player.Player)]
+import qualified Player as Pl
+import qualified Subscribers as Sub
 
 main :: IO ()
 main = do
-  port <- parsePort <$> getArgs
-  playerListMvar <- newMVar [] :: IO (MVar PlayerList)
-  WS.runServer "0.0.0.0" port $ app playerListMvar
+  subVar <- Sub.makeMVar
+  playerListVar <- Pl.makeListMVar
+  WS.runServer "0.0.0.0" 9160 $ app subVar playerListVar
 
-parsePort :: [String] -> Int
-parsePort args =
-  case args of
-    [] -> 9160
-    (h:_) -> read h
-
-app :: MVar PlayerList -> WS.ServerApp
-app playerListMvar pending = do
+app :: MVar Sub.Subscribers -> MVar Pl.Players -> WS.ServerApp
+app subVar playerListVar pending = do
   conn <- WS.acceptRequest pending
-  Player.handshake conn $ addPlayer playerListMvar conn
-
-addPlayer :: MVar PlayerList -> WS.Connection -> Player.Player -> IO ()
-addPlayer playerListMvar conn player = do
-  print $ Player.plUsername player `T.append` " connected!"
-  modifyMVar_ playerListMvar $ return . (:) (conn, player)
+  maybeMsg <- parsePlayerMessage <$> WS.receiveData conn
+  case maybeMsg of
+    Just (ConnectionRequest uname) -> do
+      playerVar <- Pl.makePlayerMVar uname
+      Sub.addSubscriber subVar conn
+      Pl.addPlayer playerListVar playerVar
+    _ -> return ()
