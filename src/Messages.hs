@@ -1,52 +1,45 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Messages
-  ( parsePlayerMessage
-  , encodeServerMessage
-  , PlayerMessage(..)
-  , ServerMessage(..)
-  ) where
+module Messages where
 
 import Data.Aeson
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString.Lazy (ByteString)
 import Data.Text (Text)
 import GHC.Exts (fromList)
+import Vector3
 
-data PlayerMessage
-  = ConnectionRequest Text
-  | KeyChange Int
-              Bool
+data PlayerMessage =
+  ConnectionRequest Text
+  deriving (Show)
+
+data ServerMessage =
+  Connected
   deriving (Show)
 
 parsePlayerMessage :: ByteString -> Maybe PlayerMessage
 parsePlayerMessage str = do
-  result <- decode str
-  messageType <- flip parseMaybe result $ flip (.:) "type" :: Maybe String
-  case messageType of
-    "connection_request" -> parse1 result ConnectionRequest
-    "keychange" -> parse2 result KeyChange
-    _ -> Nothing
-
-parse1 :: FromJSON a => Object -> (a -> b) -> Maybe b
-parse1 val with = with <$> (flip parseMaybe val $ flip (.:) "0")
-
-parse2 :: (FromJSON a, FromJSON b) => Object -> (a -> b -> c) -> Maybe c
-parse2 val with =
-  flip parseMaybe val $ \obj -> do
-    arg1 <- obj .: "0"
-    arg2 <- obj .: "1"
-    return $ with arg1 arg2
-
-data ServerMessage =
-  Connected Text
-  deriving (Show)
+  decoded <- decode str
+  messageType <- parseMaybe typeDecoder decoded :: Maybe String
+  messageParser <-
+    case messageType of
+      "connection_request" -> Just $ parse1 ConnectionRequest
+      _ -> Nothing
+  messageParser decoded
+  where
+    typeDecoder = flip (.:) "type"
+    parse1 with = fmap with . parseMaybe (flip (.:) "0")
+    parse2 with =
+      parseMaybe $ \obj -> do
+        arg1 <- obj .: "0"
+        arg2 <- obj .: "1"
+        return $ with arg1 arg2
 
 encodeServerMessage :: ServerMessage -> ByteString
 encodeServerMessage msg =
   encode $
   case msg of
-    Connected username -> helper "connected" [("0", toJSON username)]
+    Connected -> encodeHelper "connected" []
   where
-    helper messageType values =
-      Object . fromList $ ("type", String messageType) : values
+    encodeHelper msgType args =
+      Object . fromList $ ("type", toJSON (msgType :: Text)) : args
