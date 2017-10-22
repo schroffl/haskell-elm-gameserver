@@ -1,5 +1,7 @@
 module Subscribers
-  ( makeMVar
+  ( Subscriber
+  , Subscribers
+  , makeMVar
   , addSubscriber
   , removeSubscriber
   , notifySubscriber
