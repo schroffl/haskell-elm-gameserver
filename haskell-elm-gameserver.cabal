@@ -24,6 +24,7 @@ library
                      , bytestring
                      , text
                      , websockets
+                     , time
   default-language:    Haskell2010
 
 executable haskell-elm-gameserver-exe
