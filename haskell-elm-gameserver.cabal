@@ -15,16 +15,8 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Messages
-                     , Player
-                     , GameLoop
-                     , Subscribers
+  exposed-modules:     
   build-depends:       base >= 4.7 && < 5
-                     , aeson
-                     , bytestring
-                     , text
-                     , websockets
-                     , time
   default-language:    Haskell2010
 
 executable haskell-elm-gameserver-exe
@@ -34,9 +26,7 @@ executable haskell-elm-gameserver-exe
   build-depends:       base
                      , haskell-elm-gameserver
                      , websockets
-                     , network
                      , text
-                     , aeson
   default-language:    Haskell2010
 
 test-suite haskell-elm-gameserver-test
