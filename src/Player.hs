@@ -1,39 +1,34 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Player where
 
-import Control.Concurrent
+import Control.Concurrent.Chan.Unagi (writeChan)
 import Control.Monad (forever)
 import Data.Text (Text)
-import Messages
+import MessageParser
 import qualified Network.WebSockets as WS
+import Types
 
-type Players = [MVar Player]
+initPlayer :: Text -> Player
+initPlayer username =
+  Player {plUsername = username, plKeys = Keys False False False False}
 
-makeListMVar :: IO (MVar Players)
-makeListMVar = newMVar []
-
-addPlayer :: MVar Players -> MVar Player -> IO ()
-addPlayer playerListVar playerVar =
-  modifyMVar_ playerListVar $ return . (:) playerVar
-
-data Player = Player
-  { plUsername :: Text
-  } deriving (Show)
-
-makePlayerMVar :: Text -> IO (MVar Player)
-makePlayerMVar username = newMVar $ Player {plUsername = username}
-
-handlePlayer :: WS.Connection -> MVar Player -> IO ()
-handlePlayer conn playerVar =
+handlePlayer :: WS.Connection -> GameMessageInput -> Text -> IO ()
+handlePlayer conn input username =
   forever $ do
-    maybeMsg <- parsePlayerMessage <$> WS.receiveData conn
-    return ()
+    maybeMsg <- parseClientMessage <$> WS.receiveData conn
+    case maybeMsg of
+      Nothing -> return ()
+      Just msg -> writeChan input $ UpdatePlayer username msg
 
-deriveMessages :: Player -> Player -> [ServerMessage]
-deriveMessages oldPlayer newPlayer =
-  []
-
--- applyInput :: Player -> Player
--- applyVelocity :: Player -> Player
--- deriveMessages :: Player -> Player -> [ServerMessage]
+update :: ClientMessage -> Player -> (Player, Action)
+update (KeyChange keyCode newState) player =
+  (player {plKeys = newKeys}, NoAction)
+  where
+    keys = plKeys player
+    newKeys =
+      case keyCode of
+        87 -> keys {keyForward = newState}
+        83 -> keys {keyBackward = newState}
+        65 -> keys {keyLeft = newState}
+        68 -> keys {keyRight = newState}
+        _ -> keys
+update msg player = (player, NoAction)
