@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     
   build-depends:       base >= 4.7 && < 5
+                     , unagi-chan
   default-language:    Haskell2010
 
 executable haskell-elm-gameserver-exe
@@ -27,6 +28,7 @@ executable haskell-elm-gameserver-exe
                      , haskell-elm-gameserver
                      , websockets
                      , text
+                     , unagi-chan
   default-language:    Haskell2010
 
 test-suite haskell-elm-gameserver-test
