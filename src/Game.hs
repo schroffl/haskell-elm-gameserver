@@ -9,8 +9,8 @@ import Data.Time.Clock (UTCTime, diffUTCTime, getCurrentTime)
 import qualified Player
 import Types
 
-start :: GameMessageChannel -> IO ()
-start (input, output) = do
+start :: GameMessageChannel -> SubscribersVar -> IO ()
+start (input, output) subsVar = do
   forkIO $ tickThread input =<< getCurrentTime
   gameLoop output []
 
@@ -25,11 +25,11 @@ tickThread input time = do
     tickDelay = floor $ (1000 / tickRate) * 1000
     convertTime = fromRational . toRational
 
-gameLoop :: GameMessageOutput -> World -> IO ()
-gameLoop output world = do
+gameLoop :: GameMessageOutput -> SubscribersVar -> World -> IO ()
+gameLoop output subsVar world = do
   (newWorld, action) <- flip update world <$> readChan output
-  executeAction action
-  gameLoop output newWorld
+  executeAction action subsVar
+  gameLoop output subsVar newWorld
 
 update :: GameMessage -> World -> (World, Action)
 update (Tick dt) world = (world, NoAction)

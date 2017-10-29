@@ -1,7 +1,9 @@
 module Types where
 
+import Control.Concurrent (MVar)
 import Control.Concurrent.Chan.Unagi (InChan, OutChan)
 import Data.Text (Text)
+import qualified Network.WebSockets as WS
 
 type GameMessageInput = InChan GameMessage
 
@@ -47,3 +49,7 @@ data Keys = Keys
   , keyLeft :: Bool
   , keyRight :: Bool
   } deriving (Show, Eq)
+
+type Subscriber = (Text, WS.Connection)
+
+type SubscribersVar = MVar [Subscriber]
