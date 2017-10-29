@@ -41,7 +41,7 @@ data Action
   = NoAction
   | NotifyPlayer Text
                  ServerMessage
-  | Broadcast ServerMessage
+  | Broadcast [ServerMessage]
   | Bunch [Action]
   deriving (Show, Eq)
 
