@@ -28,7 +28,6 @@ notifySingle :: [ServerMessage] -> Text -> SubscribersVar -> IO ()
 notifySingle msgs username subsVar = do
   subs <- readMVar subsVar
   let maybeSub = find ((== username) . fst) subs
-  print $ fst <$> maybeSub
   case maybeSub of
     Nothing -> return ()
     Just (_, conn) -> WS.sendTextDatas conn encodedMsgs
