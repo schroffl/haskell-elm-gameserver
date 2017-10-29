@@ -18,7 +18,9 @@ data GameMessage
                  ClientMessage
   deriving (Show, Eq)
 
-type World = [Player]
+data World = World
+  { wldPlayers :: [Player]
+  } deriving (Show, Eq)
 
 data Player = Player
   { plUsername :: Text

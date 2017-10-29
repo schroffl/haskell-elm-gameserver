@@ -12,7 +12,9 @@ import Types
 start :: GameMessageChannel -> SubscribersVar -> IO ()
 start (input, output) subsVar = do
   forkIO $ tickThread input =<< getCurrentTime
-  gameLoop output []
+  gameLoop output subsVar initialWorld
+  where
+    initialWorld = World {wldPlayers = []}
 
 tickThread :: GameMessageInput -> UTCTime -> IO ()
 tickThread input time = do
@@ -35,12 +37,14 @@ update :: GameMessage -> World -> (World, Action)
 update (Tick dt) world = (world, NoAction)
 update (CreatePlayer username) world =
   let newPlayer = Player.initPlayer username
-  in (newPlayer : world, NotifyPlayer username Connected)
+      newWorld = world {wldPlayers = newPlayer : wldPlayers world}
+  in (newWorld, NotifyPlayer username Connected)
 update (UpdatePlayer username clMsg) world = (newWorld, Bunch actions)
   where
-    (newWorld, actions) = result
+    newWorld = world {wldPlayers = newPlayers}
+    (newPlayers, actions) = result
     result =
-      unzip . flip map world $ \p ->
+      unzip . flip map (wldPlayers world) $ \p ->
         if plUsername p == username
           then Player.update clMsg p
           else (p, NoAction)
